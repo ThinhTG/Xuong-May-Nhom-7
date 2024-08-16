@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GarmentFactoryAPI.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240816045735_InitialCreate")]
+    [Migration("20240816064114_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
