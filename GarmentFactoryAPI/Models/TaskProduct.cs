@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string CreatedBy { get; set; }
+        public User User { get; set; }
         public ICollection<AssemblyLine> AssemblyLines { get; set; }
     }
 }
