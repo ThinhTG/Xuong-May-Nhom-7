@@ -5,8 +5,9 @@
         public int Id { get; set; }
         public string Name { get; set; }
         public string Code { get; set; }
-        public decimal Price { get; set; }
-        public string CreatedBy { get; set; }
+        public double Price { get; set; }
         public Category Category { get; set; }
+        public User User { get; set; }
+        public ICollection<OrderDetail> OrderDetails { get; set; }
     }
 }
