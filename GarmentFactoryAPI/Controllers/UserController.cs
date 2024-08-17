@@ -11,7 +11,9 @@ using System;
 using DetMayDemoApp.Models;
 using GarmentFactoryAPI.Data;
 using GarmentFactoryAPI.Models;
-using Microsoft.AspNetCore.Authorization; // Ensure this namespace is correct and the project reference is added
+using Microsoft.AspNetCore.Authorization;
+using GarmentFactoryAPI.Services;
+using GermentFactory.Services; // Ensure this namespace is correct and the project reference is added
 
 namespace DetMayDemoApp.Controllers
 {
@@ -19,11 +21,14 @@ namespace DetMayDemoApp.Controllers
     {
         private readonly DataContext _context;
         private readonly IConfiguration _configuration;
+        private readonly UserService _userService; // Add this line
 
-        public UserController(DataContext context, IConfiguration configuration)
+
+        public UserController(DataContext context, IConfiguration configuration, UserService userService)
         {
             _context = context;
             _configuration = configuration;
+            _userService = userService;
         }
 
         [HttpPost]
@@ -35,43 +40,36 @@ namespace DetMayDemoApp.Controllers
                 return BadRequest("User data is null");
             }
 
-            // Check if the username already exists
-            bool usernameExists = await _context.Users.AnyAsync(u => u.Username == userDto.Username);
-            if (usernameExists)
+            var registeredUser = await _userService.RegisterAsync(userDto);
+            if (registeredUser == null)
             {
                 return Conflict("Username already exists");
             }
 
-            // Map the RegisterDTO to User entity
-            var user = new User
-            {
-                Username = userDto.Username,
-                Password = userDto.Password,
-                RoleId = userDto.roleId,
-
-                // Map other properties as needed
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new { username = user.Username }, user);
+            return CreatedAtAction("GetUser", new { id = registeredUser.Id }, registeredUser);
         }
 
-
+        [Authorize(Policy = "RequireAdminRole")]
         [HttpGet]
         [Route("api/User/GetUsers")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            return await _context.Users.ToListAsync();
+            var users = await _userService.GetAll();
+            return Ok(new { UserDTO = users });
         }
 
-        [Authorize]
+
         [HttpGet]
         [Route("api/User/GetUser")]
-        public async Task<ActionResult<IEnumerable<User>>> GetUser(int id)
+        public async Task<ActionResult<User>> GetUser(int id)
         {
-            return await _context.Users.ToListAsync();
+            var user = await _userService.GetById1(id);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return Ok(user);
         }
 
 
@@ -79,16 +77,18 @@ namespace DetMayDemoApp.Controllers
         [Route("api/User/Login")]
         public async Task<ActionResult<User>> Login([FromBody] LoginDTO user)
         {
-            var userInDb = await _context.Users.FirstOrDefaultAsync(u => u.Username == user.Username && u.Password == user.Password);
+            var userInDb = await _userService.AuthenticateAsync(user.Username,user.Password);
             if (userInDb != null)
             {
                 var claims = new List<Claim>
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"] ?? string.Empty),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim("Username", userInDb.Username),
-                    new Claim("Password", userInDb.Password)
-                };
+{
+    new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"] ?? string.Empty),
+    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+    new Claim("Username", userInDb.Username),
+    new Claim("Password", userInDb.Password),
+    new Claim("roleId", userInDb.RoleId.ToString()) // Đảm bảo roleId được thêm vào
+};
+
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? string.Empty));
                 var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -104,5 +104,58 @@ namespace DetMayDemoApp.Controllers
             }
             return BadRequest("Invalid credentials");
         }
+
+        [Authorize(Policy = "RequireAdminRole")]
+        [HttpDelete]
+        [Route("api/User/DeleteUser")]
+        public async Task<ActionResult> DeleteUser(int id)
+        {
+            var result = await _userService.DeleteById1(id);
+            if (result.Code == Const.SUCCESS_DELETE_CODE)
+            {
+                return Ok(result.Message);
+            }
+
+            return NotFound(result.Message);
+        }
+
+        [Authorize(Policy = "RequireAdminRole")]
+        [HttpPut]
+        [Route("api/User/UpdateUser")]
+        public async Task<ActionResult> UpdateUser(int id, [FromBody] RegisterDTO user)
+        {
+            // Retrieve the user by ID
+            var userResult = await _userService.GetById1(id);
+
+            if (userResult == null || userResult.Data == null)
+            {
+                return NotFound("User not found");
+            }
+
+            var userUpdate = userResult.Data as User;
+            if (userUpdate == null)
+            {
+                return StatusCode(500, "Error retrieving user data");
+            }
+
+            // Update the user's properties
+            userUpdate.Username = user.Username;
+            userUpdate.Password = user.Password;
+            userUpdate.RoleId = user.roleId; // Assuming roles are updated as well
+
+            try
+            {
+                // Attempt to update the user in the database
+                await _userService.Save(userUpdate);
+                return Ok("User updated successfully");
+            }
+            catch (Exception ex)
+            {
+                // Handle any errors that occur during the update process
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+
     }
 }
