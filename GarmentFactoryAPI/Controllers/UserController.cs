@@ -59,7 +59,6 @@ namespace DetMayDemoApp.Controllers
         }
 
 
-
         [HttpGet]
         [Route("api/User/GetUser")]
         public async Task<ActionResult<User>> GetUser(int id)
@@ -119,6 +118,44 @@ namespace DetMayDemoApp.Controllers
 
             return NotFound(result.Message);
         }
+
+        [Authorize(Policy = "RequireAdminRole")]
+        [HttpPut]
+        [Route("api/User/UpdateUser")]
+        public async Task<ActionResult> UpdateUser(int id, [FromBody] RegisterDTO user)
+        {
+            // Retrieve the user by ID
+            var userResult = await _userService.GetById1(id);
+
+            if (userResult == null || userResult.Data == null)
+            {
+                return NotFound("User not found");
+            }
+
+            var userUpdate = userResult.Data as User;
+            if (userUpdate == null)
+            {
+                return StatusCode(500, "Error retrieving user data");
+            }
+
+            // Update the user's properties
+            userUpdate.Username = user.Username;
+            userUpdate.Password = user.Password;
+            userUpdate.RoleId = user.roleId; // Assuming roles are updated as well
+
+            try
+            {
+                // Attempt to update the user in the database
+                await _userService.Save(userUpdate);
+                return Ok("User updated successfully");
+            }
+            catch (Exception ex)
+            {
+                // Handle any errors that occur during the update process
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
 
     }
 }
