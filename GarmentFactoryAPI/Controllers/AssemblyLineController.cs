@@ -39,7 +39,7 @@ public class AssemblyLinesController : ControllerBase
 
     // GET: api/AssemblyLines/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<AssemblyLine>> GetAssemblyLine(int id)
+    public async Task<ActionResult<AssemblyLineDTO>> GetAssemblyLine(int id)
     {
         var assemblyLine = await _context.AssemblyLines.FindAsync(id);
 
@@ -48,19 +48,53 @@ public class AssemblyLinesController : ControllerBase
             return NotFound();
         }
 
-        return assemblyLine;
+        var assemblyLineDTO = new AssemblyLineDTO
+        {
+            Id = assemblyLine.Id,
+            StartDate = assemblyLine.StartDate,
+            EndDate = assemblyLine.EndDate,
+            OrderDetailId = assemblyLine.OrderDetailId,
+            TaskProductId = assemblyLine.TaskProductId,
+            UserId = assemblyLine.UserId
+        };
+
+        return assemblyLineDTO;
     }
 
-    
+
+
     // POST: api/AssemblyLines
     [HttpPost]
-    public async Task<ActionResult<AssemblyLine>> PostAssemblyLine(AssemblyLine assemblyLine)
+    [HttpPost]
+    public async Task<ActionResult<AssemblyLineDTO>> PostAssemblyLine(AssemblyLineDTO assemblyLineDto)
     {
+        // Map the DTO to the entity
+        var assemblyLine = new AssemblyLine
+        {
+            StartDate = assemblyLineDto.StartDate,
+            EndDate = assemblyLineDto.EndDate,
+            OrderDetailId = assemblyLineDto.OrderDetailId,
+            TaskProductId = assemblyLineDto.TaskProductId,
+            UserId = assemblyLineDto.UserId
+        };
+
         _context.AssemblyLines.Add(assemblyLine);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetAssemblyLine", new { id = assemblyLine.Id }, assemblyLine);
+        // Map the entity back to the DTO
+        var createdAssemblyLineDto = new AssemblyLineDTO
+        {
+            Id = assemblyLine.Id,
+            StartDate = assemblyLine.StartDate,
+            EndDate = assemblyLine.EndDate,
+            OrderDetailId = assemblyLine.OrderDetailId,
+            TaskProductId = assemblyLine.TaskProductId,
+            UserId = assemblyLine.UserId
+        };
+
+        return CreatedAtAction("GetAssemblyLine", new { id = assemblyLine.Id }, createdAssemblyLineDto);
     }
+
 
     // DELETE: api/AssemblyLines/5
     [HttpDelete("{id}")]
