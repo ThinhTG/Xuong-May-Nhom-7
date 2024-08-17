@@ -76,7 +76,7 @@ namespace GarmentFactoryAPI.Controllers
 
         // POST: api/Orders
         [HttpPost("CreateOrder")]
-        public ActionResult<OrderDTO> PostOrder(OrderDTO orderDto)
+        public ActionResult<OrderDTO> PostOrder(CreateOrderDTO orderDto)
         {
             var order = new Order
             {
