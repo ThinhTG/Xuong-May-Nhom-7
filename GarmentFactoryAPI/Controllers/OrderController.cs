@@ -76,7 +76,7 @@ namespace GarmentFactoryAPI.Controllers
 
         // POST: api/Orders
         [HttpPost("CreateOrder")]
-        public ActionResult<OrderDTO> PostOrder(OrderDTO orderDto)
+        public ActionResult<OrderDTO> PostOrder(CreateOrderDTO orderDto)
         {
             var order = new Order
             {
@@ -92,10 +92,9 @@ namespace GarmentFactoryAPI.Controllers
 
             _context.Orders.Add(order);
             _context.SaveChanges();
+             // Return the ID of the created order
 
-            orderDto.Id = order.Id; // Return the ID of the created order
-
-            return CreatedAtAction("GetOrder", new { id = orderDto.Id }, orderDto);
+            return CreatedAtAction("GetOrder", new { id = order.Id }, orderDto);
         }
 
         // PUT: api/Orders/5
