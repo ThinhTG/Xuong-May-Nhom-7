@@ -163,11 +163,13 @@ namespace GarmentFactoryAPI.Services
             {
                 //var currency = await _currencyRepository.GetByIdAsync(code);
                 var currency = await _unitOfWork.UserRepository.GetByIdAsync(code);
+
+                currency.IsDeleted = true;
                 if (currency != null)
                 {
                     //var result = await _currencyRepository.RemoveAsync(currency);
-                    var result = await _unitOfWork.UserRepository.RemoveAsync(currency);
-                    if (result)
+                    var result = await _unitOfWork.UserRepository.UpdateAsync(currency);
+                    if (result > 0)
                     {
                         return new BusinessResult(Const.SUCCESS_DELETE_CODE, Const.SUCCESS_DELETE_MSG);
                     }
@@ -201,6 +203,7 @@ namespace GarmentFactoryAPI.Services
                 Username = userDto.Username,
                 Password = userDto.Password,
                 RoleId = userDto.roleId,
+                IsDeleted = false
                 // Map other properties as needed
             };
 

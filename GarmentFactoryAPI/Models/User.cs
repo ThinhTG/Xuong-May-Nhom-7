@@ -9,6 +9,8 @@ namespace GarmentFactoryAPI.Models
         public string Password { get; set; }
         public int RoleId { get; set; }
 
+        public bool IsDeleted { get; set; }
+
         [JsonIgnore]
         public ICollection<Product> Products { get; set; }
 

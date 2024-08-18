@@ -14,6 +14,7 @@ using GarmentFactoryAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using GarmentFactoryAPI.Services;
 using GermentFactory.Services; // Ensure this namespace is correct and the project reference is added
+using GarmentFactoryAPI.Pagination;
 
 namespace DetMayDemoApp.Controllers
 {
@@ -51,12 +52,49 @@ namespace DetMayDemoApp.Controllers
 
         [Authorize(Policy = "RequireAdminRole")]
         [HttpGet]
-        [Route("api/User/GetUsers")]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        [Route("api/User/GetUsersPaged")]
+        [ProducesResponseType(200, Type = typeof(PagedResult<User>))]
+        public async Task<ActionResult<PagedResult<User>>> GetUsersPaged(int pageNumber = 1, int pageSize = 10)
         {
-            var users = await _userService.GetAll();
-            return Ok(new { UserDTO = users });
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest("Page number and page size must be greater than 0.");
+            }
+
+            var usersResult = await _userService.GetAll();
+            var users = usersResult.Data as IEnumerable<User>; // Ensure Data is cast to IEnumerable<User>
+            if (users == null)
+            {
+                return StatusCode(500, "Error retrieving user data");
+            }
+
+            var activeUsers = users.Where(u => !u.IsDeleted);
+
+            var totalActiveUsers = activeUsers.Count();
+
+            var pagedUsers = activeUsers
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new User
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    RoleId = u.RoleId,
+                    // Add other properties if necessary
+                })
+                .ToList();
+
+            var result = new PagedResult<User>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalActiveUsers,
+                Items = pagedUsers
+            };
+
+            return Ok(result);
         }
+
 
 
         [HttpGet]
@@ -142,6 +180,7 @@ namespace DetMayDemoApp.Controllers
             userUpdate.Username = user.Username;
             userUpdate.Password = user.Password;
             userUpdate.RoleId = user.roleId; // Assuming roles are updated as well
+            userUpdate.IsDeleted = user.IsDeleted;
 
             try
             {
