@@ -56,24 +56,27 @@ namespace GarmentFactoryAPI.Repository
                 .Where(p => p.Category.Id == categoryId).ToList();
         }
 
-        public bool CreateProduct(int categoryId, Product product)
+        public bool CreateProduct(Product product)
         {
-            throw new NotImplementedException();
+            _context.Products.Add(product);
+            return Save();
         }
 
         public bool UpdateProduct(Product product)
         {
-            throw new NotImplementedException();
+            _context.Products.Update(product);
+            return Save();
         }
 
         public bool DeleteProduct(Product product)
         {
-            throw new NotImplementedException();
+            _context.Products.Remove(product);
+            return Save();
         }
 
         public bool Save()
         {
-            throw new NotImplementedException();
+            return _context.SaveChanges() > 0 ? true : false;
         }
     }
 }

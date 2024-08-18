@@ -11,7 +11,7 @@ namespace GarmentFactoryAPI.Interfaces
 
         bool HasProduct(int productId);
         bool HasProduct(string productName);
-        bool CreateProduct(int categoryId,Product product);
+        bool CreateProduct(Product product);
         bool UpdateProduct(Product product);
         bool DeleteProduct(Product product);
         bool Save();
