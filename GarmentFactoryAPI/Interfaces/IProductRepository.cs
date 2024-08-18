@@ -6,8 +6,15 @@ namespace GarmentFactoryAPI.Interfaces
     {
         ICollection<Product> GetProducts();
         Product GetProductById(int productId);
-        Product GetProductByName(string productName);
+        ICollection<Product> GetProductsByName(string productName);
+        ICollection<Product> GetProductsOfCategory(int categoryId);
+
         bool HasProduct(int productId);
+        bool HasProduct(string productName);
+        bool CreateProduct(int categoryId,Product product);
+        bool UpdateProduct(Product product);
+        bool DeleteProduct(Product product);
+        bool Save();
 
     }
 }
