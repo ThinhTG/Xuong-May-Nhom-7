@@ -18,6 +18,7 @@ namespace GarmentFactoryAPI.Repository
             return _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.User)
+                .Where(p => p.IsActive == true)
                 .OrderBy(p => p.Id)
                 .ToList();
         }
@@ -27,7 +28,7 @@ namespace GarmentFactoryAPI.Repository
             return _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.User)
-                .Where(p => p.Id == productId)
+                .Where(p => p.Id == productId && p.IsActive == true)
                 .FirstOrDefault();
         }
 
@@ -36,7 +37,7 @@ namespace GarmentFactoryAPI.Repository
             return _context.Products
                 .Include (p => p.Category)
                 .Include (p => p.User)
-                .Where(p => EF.Functions.Like(p.Name.ToLower(), $"%{productName.ToLower()}%"))
+                .Where(p => EF.Functions.Like(p.Name.ToLower(), $"%{productName.ToLower()}%") && p.IsActive == true)
                 .ToList();
         }
 
@@ -77,6 +78,15 @@ namespace GarmentFactoryAPI.Repository
         public bool Save()
         {
             return _context.SaveChanges() > 0 ? true : false;
+        }
+
+        public ICollection<Product> GetAllProductsFromData()
+        {
+            return _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.User)
+                .OrderBy(p => p.Id)
+                .ToList();
         }
     }
 }

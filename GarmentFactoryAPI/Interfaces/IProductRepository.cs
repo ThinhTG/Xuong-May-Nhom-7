@@ -5,6 +5,7 @@ namespace GarmentFactoryAPI.Interfaces
     public interface IProductRepository
     {
         ICollection<Product> GetProducts();
+        ICollection<Product> GetAllProductsFromData();
         Product GetProductById(int productId);
         ICollection<Product> GetProductsByName(string productName);
         ICollection<Product> GetProductsOfCategory(int categoryId);

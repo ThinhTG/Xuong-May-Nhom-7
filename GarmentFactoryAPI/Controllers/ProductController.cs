@@ -22,7 +22,7 @@ namespace GarmentFactoryAPI.Controllers
             _context = context;
         }
 
-        //Lấy tất cả các product
+        //Lấy tất cả các product đang Active
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(PagedResult<ProductDTO>))]
         public IActionResult GetProducts(int pageNumber = 1, int pageSize = 3)
@@ -33,6 +33,49 @@ namespace GarmentFactoryAPI.Controllers
             }
 
             var allProducts = _productRepository.GetProducts();
+
+            // Thêm phân trang
+            var pagedProducts = allProducts
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ProductDTO
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Code = p.Code,
+                    Price = p.Price,
+                    CategoryId = p.Category.Id,
+                    UserId = p.User.Id
+                })
+                .ToList();
+
+            var totalProducts = allProducts.Count();
+            var result = new PagedResult<ProductDTO>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalProducts,
+                Items = pagedProducts
+            };
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            return Ok(result);
+        }
+
+        //Lấy tất cả các product đang Active
+        [HttpGet("allProductFromData")]
+        [ProducesResponseType(200, Type = typeof(PagedResult<ProductDTO>))]
+        public IActionResult GetAllProductsFromData(int pageNumber = 1, int pageSize = 3)
+        {
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest("Page number and page size must be greater than 0.");
+            }
+
+            var allProducts = _productRepository.GetAllProductsFromData();
 
             // Thêm phân trang
             var pagedProducts = allProducts
@@ -95,46 +138,70 @@ namespace GarmentFactoryAPI.Controllers
 
         //Search product theo tên
         [HttpGet("search/{productName}")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<ProductDTO>))]
+        [ProducesResponseType(200, Type = typeof(PagedResult<ProductDTO>))]
         [ProducesResponseType(400)]
-        public IActionResult GetProductsByName(string productName)
+        public IActionResult GetProductsByName(string productName, int pageNumber = 1, int pageSize = 3)
         {
             if (string.IsNullOrWhiteSpace(productName))
                 return BadRequest("Product name cannot be empty.");
+
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest("Page number and page size must be greater than 0.");
+            }
 
             var products = _productRepository.GetProductsByName(productName);
 
             if (!products.Any())
                 return NotFound();
 
-            //map tới thuộc tính của ProductDTO
-            var productDtos = products.Select(p => new ProductDTO
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Code = p.Code,
-                Price = p.Price,
-                CategoryId = p.Category.Id,
-                UserId = p.User.Id
-            }).ToList();
+            var pagedProducts = products
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ProductDTO
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Code = p.Code,
+                    Price = p.Price,
+                    CategoryId = p.Category.Id,
+                    UserId = p.User.Id
+                })
+                .ToList();
 
-            return Ok(productDtos);
+            var totalProducts = products.Count();
+            var result = new PagedResult<ProductDTO>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalProducts,
+                Items = pagedProducts
+            };
+
+            return Ok(result);
         }
 
         //Lấy product dựa trên category Id
         [HttpGet("categoryId/{categoryId}")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<ProductDTO>))]
+        [ProducesResponseType(200, Type = typeof(PagedResult<ProductDTO>))]
         [ProducesResponseType(400)]
-        public IActionResult GetProductsOfCategory(int categoryId)
+        public IActionResult GetProductsOfCategory(int categoryId, int pageNumber = 1, int pageSize = 3)
         {
-            
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest("Page number and page size must be greater than 0.");
+            }
 
             var products = _productRepository.GetProductsOfCategory(categoryId);
 
             if (!products.Any())
                 return NotFound();
+
             //map tới thuộc tính của ProductDTO
-            var productDtos = products.Select(p => new ProductDTO
+            var pagedProducts = products
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ProductDTO
             {
                 Id = p.Id,
                 Name = p.Name,
@@ -144,7 +211,16 @@ namespace GarmentFactoryAPI.Controllers
                 UserId = p.User.Id
             }).ToList();
 
-            return Ok(productDtos);
+            var totalProducts = products.Count();
+            var result = new PagedResult<ProductDTO>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalProducts,
+                Items = pagedProducts
+            };
+
+            return Ok(result);
         }
 
         [HttpPost]
@@ -237,7 +313,9 @@ namespace GarmentFactoryAPI.Controllers
             if (product == null)
                 return NotFound();
 
-            if (!_productRepository.DeleteProduct(product))
+            product.IsActive = false;
+
+            if (!_productRepository.UpdateProduct(product))
                 return StatusCode(500, "Something went wrong.");
 
             return NoContent();
