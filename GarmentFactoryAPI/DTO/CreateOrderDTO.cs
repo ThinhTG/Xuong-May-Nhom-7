@@ -1,6 +1,6 @@
-﻿using GarmentFactoryAPI.DTOs;
+﻿using GarmentFactoryAPI.DTO;
 
-namespace GarmentFactoryAPI.Models
+namespace GarmentFactoryAPI.DTO
 {
     public class CreateOrderDTO
     {
@@ -11,7 +11,7 @@ namespace GarmentFactoryAPI.Models
     }
 
     public class CreateOrderDetailDTO
-    {        
+    {
         public int Quantity { get; set; }
         public int ProductId { get; set; }
     }
