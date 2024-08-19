@@ -1,6 +1,7 @@
 ﻿using GarmentFactoryAPI.Data;
 using GarmentFactoryAPI.DTO;
 using GarmentFactoryAPI.Models;
+using GarmentFactoryAPI.Pagination;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -20,9 +21,20 @@ public class AssemblyLinesController : ControllerBase
 
     // GET: api/AssemblyLines
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AssemblyLineDTO>>> GetAssemblyLines()
+    [ProducesResponseType(200, Type = typeof(PagedResult<AssemblyLineDTO>))]
+    public async Task<IActionResult> GetAssemblyLines(int pageNumber = 1, int pageSize = 3)
     {
-        var assemblyLines = await _context.AssemblyLines
+        if (pageNumber < 1 || pageSize < 1)
+        {
+            return BadRequest("Page number and page size must be greater than 0.");
+        }
+
+        var allAssemblyLines = await _context.AssemblyLines.ToListAsync();
+
+        // Pagination
+        var pagedAssemblyLines = allAssemblyLines
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(al => new AssemblyLineDTO
             {
                 Id = al.Id,
@@ -32,10 +44,25 @@ public class AssemblyLinesController : ControllerBase
                 TaskProductId = al.TaskProductId,
                 UserId = al.UserId
             })
-            .ToListAsync();
+            .ToList();
 
-        return Ok(assemblyLines);
+        var totalAssemblyLines = allAssemblyLines.Count();
+        var result = new PagedResult<AssemblyLineDTO>
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalAssemblyLines,
+            Items = pagedAssemblyLines
+        };
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        return Ok(result);
     }
+
 
     // GET: api/AssemblyLines/5
     [HttpGet("{id}")]
@@ -61,10 +88,47 @@ public class AssemblyLinesController : ControllerBase
         return assemblyLineDTO;
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutAssemblyLine(int id, AssemblyLineDTO assemblyLineDto)
+    {
+        if (id != assemblyLineDto.Id)
+        {
+            return BadRequest();
+        }
 
+        // Map DTO to Entity
+        var assemblyLine = new AssemblyLine
+        {
+            Id = assemblyLineDto.Id,
+            StartDate = assemblyLineDto.StartDate,
+            EndDate = assemblyLineDto.EndDate,
+            OrderDetailId = assemblyLineDto.OrderDetailId,
+            TaskProductId = assemblyLineDto.TaskProductId,
+            UserId = assemblyLineDto.UserId
+        };
+
+        _context.Entry(assemblyLine).State = EntityState.Modified;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!AssemblyLineExists(id))
+            {
+                return NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        return NoContent();
+    }
 
     // POST: api/AssemblyLines
-    [HttpPost]
     [HttpPost]
     public async Task<ActionResult<AssemblyLineDTO>> PostAssemblyLine(AssemblyLineDTO assemblyLineDto)
     {
