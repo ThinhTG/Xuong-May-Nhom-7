@@ -7,7 +7,7 @@ namespace GarmentFactoryAPI.Data
     public class UnitOfWork : IDisposable
     {
         private readonly DataContext _context;
-        //private CategoryRepository? _categoryRepository;
+        private CategoryRepository? _categoryRepository;
         //private ProductRepository? _productRepository;
         //private OrderRepository? _orderRepository;
         //private OrderDetailRepository? _orderDetailRepository;
@@ -77,13 +77,21 @@ namespace GarmentFactoryAPI.Data
             }
         }
 
-/*        public RoleRepository RoleRepository
+        public CategoryRepository CategoryRepository
         {
             get
             {
-                return _roleRepository ??= new RoleRepository(_context);
+                return _categoryRepository ??= new CategoryRepository(_context);
             }
-        }*/
+        }
+
+        /*        public RoleRepository RoleRepository
+                {
+                    get
+                    {
+                        return _roleRepository ??= new RoleRepository(_context);
+                    }
+                }*/
 
         public void Save()
         {
