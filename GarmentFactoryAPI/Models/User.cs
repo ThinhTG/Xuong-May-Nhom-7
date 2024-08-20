@@ -11,7 +11,6 @@ namespace GarmentFactoryAPI.Models
 
         public int RoleId { get; set; }
 
-        public bool IsDeleted { get; set; }
 
         [JsonIgnore]
         public ICollection<Product> Products { get; set; }

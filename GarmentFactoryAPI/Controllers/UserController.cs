@@ -68,7 +68,7 @@ namespace DetMayDemoApp.Controllers
                 return StatusCode(500, "Error retrieving user data");
             }
 
-            var activeUsers = users.Where(u => !u.IsDeleted);
+            var activeUsers = users;
 
             var totalActiveUsers = activeUsers.Count();
 
@@ -79,7 +79,9 @@ namespace DetMayDemoApp.Controllers
                 {
                     Id = u.Id,
                     Username = u.Username,
+                    Password = u.Password,
                     RoleId = u.RoleId,
+                    IsActive = u.IsActive,
                     // Add other properties if necessary
                 })
                 .ToList();
@@ -94,6 +96,8 @@ namespace DetMayDemoApp.Controllers
 
             return Ok(result);
         }
+
+
 
 
 
@@ -149,18 +153,17 @@ namespace DetMayDemoApp.Controllers
         public async Task<ActionResult> DeleteUser(int id)
         {
             var result = await _userService.DeleteById1(id);
-            if (result.Code == Const.SUCCESS_DELETE_CODE)
+            if (result.Message == Const.FAIL_DELETE_MSG)
             {
-                return Ok(result.Message);
+                return NotFound();
             }
-
-            return NotFound(result.Message);
+            return Ok(result.Message);
         }
 
         [Authorize(Policy = "RequireAdminRole")]
         [HttpPut]
         [Route("api/User/UpdateUser")]
-        public async Task<ActionResult> UpdateUser(int id, [FromBody] RegisterDTO user)
+        public async Task<ActionResult> UpdateUser(int id, [FromBody] UpdateUserDTO userDto)
         {
             // Retrieve the user by ID
             var userResult = await _userService.GetById1(id);
@@ -176,16 +179,24 @@ namespace DetMayDemoApp.Controllers
                 return StatusCode(500, "Error retrieving user data");
             }
 
+            // Check if the new username already exists (and isn't the current user's username)
+            var existingUserResult = await _userService.GetByName(userDto.Username);
+            var existingUser = existingUserResult.Data as User;
+            if (existingUser != null && existingUser.Id != id)
+            {
+                return Conflict("Username already exists");
+            }
+
             // Update the user's properties
-            userUpdate.Username = user.Username;
-            userUpdate.Password = user.Password;
-            userUpdate.RoleId = user.roleId; // Assuming roles are updated as well
-            userUpdate.IsDeleted = user.IsDeleted;
+            userUpdate.Username = userDto.Username;
+            userUpdate.Password = userDto.Password;
+            userUpdate.RoleId = userDto.RoleId;
+            userUpdate.IsActive = userDto.IsActive;
 
             try
             {
                 // Attempt to update the user in the database
-                await _userService.Save(userUpdate);
+                await _userService.Update(userUpdate);
                 return Ok("User updated successfully");
             }
             catch (Exception ex)
@@ -194,6 +205,7 @@ namespace DetMayDemoApp.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
 
 
     }

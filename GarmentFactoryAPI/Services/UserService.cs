@@ -10,7 +10,7 @@ namespace GarmentFactoryAPI.Services
     public interface IUserService
     {
         Task<IBusinessResult> GetAll();
-        Task<IBusinessResult> GetById(string code);
+        Task<IBusinessResult> GetByName(string code);
         Task<IBusinessResult> Save(User user);
         Task<IBusinessResult> Update(User user);
         Task<IBusinessResult> DeleteById(string code);
@@ -51,7 +51,7 @@ namespace GarmentFactoryAPI.Services
             }
         }
 
-        public async Task<IBusinessResult> GetById(string code)
+        public async Task<IBusinessResult> GetByName(string code)
         {
             try
             {
@@ -157,30 +157,32 @@ namespace GarmentFactoryAPI.Services
             }
         }
 
-        public async Task<IBusinessResult> DeleteById1(int code)
+        public async Task<IBusinessResult> DeleteById1(int id)
         {
             try
             {
-                //var currency = await _currencyRepository.GetByIdAsync(code);
-                var currency = await _unitOfWork.UserRepository.GetByIdAsync(code);
+                var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
 
-                currency.IsDeleted = true;
-                if (currency != null)
+                if (user == null)
                 {
-                    //var result = await _currencyRepository.RemoveAsync(currency);
-                    var result = await _unitOfWork.UserRepository.UpdateAsync(currency);
-                    if (result > 0)
-                    {
-                        return new BusinessResult(Const.SUCCESS_DELETE_CODE, Const.SUCCESS_DELETE_MSG);
-                    }
-                    else
-                    {
-                        return new BusinessResult(Const.FAIL_DELETE_CODE, Const.FAIL_DELETE_MSG);
-                    }
+                    return new BusinessResult(Const.WARNING_NO_DATA_CODE, Const.WARNING_NO_DATA_MSG);
+                }
+
+                if (!user.IsActive)
+                {
+                    return new BusinessResult(Const.WARNING_ALREADY_INACTIVE_CODE, Const.WARNING_ALREADY_INACTIVE_MSG); // Adjust the message and code as needed
+                }
+
+                user.IsActive = false;
+                var result = await _unitOfWork.UserRepository.UpdateAsync(user);
+
+                if (result > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_DELETE_CODE, Const.SUCCESS_DELETE_MSG);
                 }
                 else
                 {
-                    return new BusinessResult(Const.WARNING_NO_DATA_CODE, Const.WARNING_NO_DATA_MSG);
+                    return new BusinessResult(Const.FAIL_DELETE_CODE, Const.FAIL_DELETE_MSG);
                 }
             }
             catch (Exception ex)
@@ -188,6 +190,7 @@ namespace GarmentFactoryAPI.Services
                 return new BusinessResult(-4, ex.ToString());
             }
         }
+
 
         public async Task<User?> AuthenticateAsync(string username, string password)
         {
@@ -203,7 +206,7 @@ namespace GarmentFactoryAPI.Services
                 Username = userDto.Username,
                 Password = userDto.Password,
                 RoleId = userDto.roleId,
-                IsDeleted = false
+                IsActive = true
                 // Map other properties as needed
             };
 

@@ -47,7 +47,7 @@ namespace GarmentFactoryAPI.Controllers
             }
 
             var result = await _categoryService.Save(category);
-            if (result.Code != Const.SUCCESS_CREATE_CODE)
+            if (result.Message != Const.SUCCESS_CREATE_MSG)
             {
                 return StatusCode(500, result.Message);
             }
@@ -87,7 +87,7 @@ namespace GarmentFactoryAPI.Controllers
         public async Task<ActionResult> DeleteCategory(int id)
         {
             var deletedCategory = await _categoryService.DeleteById1(id);
-            if (deletedCategory.Code == Const.SUCCESS_DELETE_CODE)
+            if (deletedCategory.Message == Const.SUCCESS_DELETE_MSG)
             {
                 return Ok(deletedCategory.Message);
             }

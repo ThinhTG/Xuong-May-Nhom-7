@@ -44,7 +44,7 @@ namespace GarmentFactoryAPI.Repositories
 
         public async Task<User?> GetUserByUsernameAndPasswordAsync(string username, string password)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.Password == password && u.IsDeleted == false);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.Password == password && u.IsActive == true);
         }
         public async Task<bool> UsernameExistsAsync(string username)
         {
