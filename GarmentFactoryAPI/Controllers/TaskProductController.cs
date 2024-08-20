@@ -41,7 +41,8 @@ namespace GarmentFactoryAPI.Controllers
                 .Select(tp => new TaskProductDTO
                 {
                     Id = tp.Id,
-                    Name = tp.Name
+                    Name = tp.Name,
+                    UserName = tp.User.Username,
                 })
                 .ToList();
 
@@ -72,7 +73,8 @@ namespace GarmentFactoryAPI.Controllers
             var taskProductDto = new TaskProductDTO
             {
                 Id = taskProduct.Id,
-                Name = taskProduct.Name
+                Name = taskProduct.Name,
+                UserName = taskProduct.User.Username,
             };
 
             return Ok(taskProductDto);
