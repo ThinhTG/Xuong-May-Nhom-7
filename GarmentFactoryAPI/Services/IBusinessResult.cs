@@ -12,7 +12,6 @@ namespace GermentFactoryAPI.Services
         string? Message { get; set; }
         object? Data { get; set; }
 
-        int Code { get; }
     }
 
     public interface IBusinessResult<T> : IBusinessResult

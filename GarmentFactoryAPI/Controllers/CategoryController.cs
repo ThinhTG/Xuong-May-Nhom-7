@@ -130,7 +130,12 @@ namespace GarmentFactoryAPI.Controllers
                 return BadRequest("Category data is invalid.");
             }
 
+<<<<<<< HEAD
             var category = new Category
+=======
+            var result = await _categoryService.Save(category);
+            if (result.Message != Const.SUCCESS_CREATE_MSG)
+>>>>>>> 041816a5ef705bd587258e6bbcf3021ca62f8123
             {
                 Name = categoryDto.Name
             };
@@ -171,8 +176,18 @@ namespace GarmentFactoryAPI.Controllers
             // Update only the Name field of the existing category
             existingCategory.Name = categoryDto.Name;
 
+<<<<<<< HEAD
             // Update the category in the repository
             if (!_categoryRepository.UpdateCategory(existingCategory))
+=======
+        [HttpDelete]
+        [Route("api/Category/DeleteCategory")]
+        [ProducesResponseType(204)]
+        public async Task<ActionResult> DeleteCategory(int id)
+        {
+            var deletedCategory = await _categoryService.DeleteById1(id);
+            if (deletedCategory.Message == Const.SUCCESS_DELETE_MSG)
+>>>>>>> 041816a5ef705bd587258e6bbcf3021ca62f8123
             {
                 return StatusCode(500, "Something went wrong.");
             }

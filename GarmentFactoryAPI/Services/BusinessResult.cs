@@ -8,7 +8,6 @@ namespace GermentFactoryAPI.Services
 {
     public class BusinessResult : IBusinessResult
     {
-        public int Code { get; }
         public int Status { get; set; }
         public string? Message { get; set; }
         public object? Data { get; set; }
@@ -32,13 +31,7 @@ namespace GermentFactoryAPI.Services
             Data = data;
         }
 
-        public BusinessResult(int code, string message, object data, int status)
-        {
-            Code = code;
-            Message = message;
-            Data = data;
-            Status = status;
-        }
+      
 
     }
 

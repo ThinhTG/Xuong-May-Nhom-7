@@ -46,6 +46,9 @@ namespace GermentFactory.Services
         public static int WARNING_NO_DATA_CODE = 4;
         public static string WARNING_NO_DATA_MSG = "No data";
 
+        public static int WARNING_ALREADY_INACTIVE_CODE = 5;
+        public static string WARNING_ALREADY_INACTIVE_MSG = "User is already inactive";
+
         #endregion
     }
 }

@@ -23,8 +23,6 @@ builder.Services.AddScoped<ITaskProductRepository, TaskProductRepository>();
 builder.Services.AddScoped<ITaskProductService, TaskProductService>();
 
 
-
-
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -70,6 +68,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured.")))
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                return context.Response.WriteAsync("Unauthorized access.");
+            }
+        };
     });
 
 
@@ -88,6 +96,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 
 // Configure scoped services
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<RoleService>();
 
 var app = builder.Build();
 
