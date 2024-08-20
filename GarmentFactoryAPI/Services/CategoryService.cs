@@ -1,189 +1,99 @@
-﻿using GarmentFactoryAPI.Data;
+﻿using GarmentFactoryAPI.DTO;
+using GarmentFactoryAPI.Interfaces;
 using GarmentFactoryAPI.Models;
-using GermentFactory.Services;
-using GermentFactoryAPI.Services;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GarmentFactoryAPI.Services
 {
-    public interface ICategoryService
-    {
-        Task<IBusinessResult> GetAll();
-        Task<IBusinessResult> GetById(string code);
-        Task<IBusinessResult> Save(Category user);
-        Task<IBusinessResult> Update(Category user);
-        Task<IBusinessResult> DeleteById(string code);
-        Task<IBusinessResult> GetById1(int code);
-        Task<IBusinessResult> DeleteById1(int code);
-    }
     public class CategoryService : ICategoryService
     {
-        private readonly UnitOfWork _unitOfWork;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public CategoryService(DataContext context)
+        public CategoryService(ICategoryRepository categoryRepository)
         {
-            _unitOfWork = new UnitOfWork(context);
+            _categoryRepository = categoryRepository;
         }
 
-        public async Task<IBusinessResult> GetAll()
+        public ICollection<CategoryDTO> GetCategories()
         {
-            try
+            var categories = _categoryRepository.GetCategories();
+            return categories.Select(c => new CategoryDTO
             {
-                #region Business rule
-                #endregion
-
-                var services = await _unitOfWork.CategoryRepository.GetAllAsync();
-
-                if (services == null)
-                {
-                    return new BusinessResult(Const.WARNING_NO_DATA_CODE, Const.WARNING_NO_DATA_MSG);
-                }
-                else
-                {
-                    return new BusinessResult(Const.SUCCESS_READ_CODE, Const.SUCCESS_READ_MSG, services);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.ERROR_EXCEPTION, ex.Message);
-            }
+                Id = c.Id,
+                Name = c.Name
+     
+            }).ToList();
         }
 
-        public async Task<IBusinessResult> GetById(string code)
+        public CategoryDTO GetCategoryById(int categoryId)
         {
-            try
+            var category = _categoryRepository.GetCategoryById(categoryId);
+            if (category == null)
             {
-                var user = await _unitOfWork.CategoryRepository.GetByIdAsync(code);
-                if (user == null)
-                {
-                    return new BusinessResult(Const.WARNING_NO_DATA_CODE, Const.WARNING_NO_DATA_MSG);
-                }
-                return new BusinessResult(Const.SUCCESS_READ_CODE, Const.SUCCESS_READ_MSG, user);
+                return null;
             }
-            catch (Exception ex)
+
+            return new CategoryDTO
             {
-                return new BusinessResult(Const.ERROR_EXCEPTION, ex.Message);
-            }
+                Id = category.Id,
+                Name = category.Name
+            };
         }
 
-        public async Task<IBusinessResult> Save(Category user)
+        public ICollection<CategoryDTO> GetCategoriesByName(string categoryName)
         {
-            try
+            var categories = _categoryRepository.GetCategoriesByName(categoryName);
+            return categories.Select(c => new CategoryDTO
             {
-                int result = await _unitOfWork.CategoryRepository.CreateAsync(user);
-                if (result > 0)
-                {
-                    return new BusinessResult(Const.SUCCESS_CREATE_CODE, Const.SUCCESS_CREATE_MSG);
-                }
-                else
-                {
-                    return new BusinessResult(Const.FAIL_CREATE_CODE, Const.FAIL_CREATE_MSG);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.ERROR_EXCEPTION, ex.ToString());
-            }
+                Id = c.Id,
+                Name = c.Name
+              
+            }).ToList();
         }
 
-        public async Task<IBusinessResult> Update(Category user)
+        public bool CreateCategory(CategoryDTO categoryDto)
         {
-            try
+            var category = new Category
             {
-                //int result = await _currencyRepository.UpdateAsync(currency);
-                int result = await _unitOfWork.CategoryRepository.UpdateAsync(user);
+                Name = categoryDto.Name,
+              
+            };
 
-                if (result > 0)
-                {
-                    return new BusinessResult(Const.SUCCESS_UPDATE_CODE, Const.SUCCESS_UPDATE_MSG);
-                }
-                else
-                {
-                    return new BusinessResult(Const.FAIL_UPDATE_CODE, Const.FAIL_UPDATE_MSG);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(-4, ex.ToString());
-            }
+            return _categoryRepository.CreateCategory(category);
         }
 
-        public async Task<IBusinessResult> DeleteById(string code)
+        public bool UpdateCategory(CategoryDTO categoryDto)
         {
-            try
+            var category = new Category
             {
-                //var currency = await _currencyRepository.GetByIdAsync(code);
-                var currency = await _unitOfWork.CategoryRepository.GetByIdAsync(code);
-                if (currency != null)
-                {
-                    //var result = await _currencyRepository.RemoveAsync(currency);
-                    var result = await _unitOfWork.CategoryRepository.RemoveAsync(currency);
-                    if (result)
-                    {
-                        return new BusinessResult(Const.SUCCESS_DELETE_CODE, Const.SUCCESS_DELETE_MSG);
-                    }
-                    else
-                    {
-                        return new BusinessResult(Const.FAIL_DELETE_CODE, Const.FAIL_DELETE_MSG);
-                    }
-                }
-                else
-                {
-                    return new BusinessResult(Const.WARNING_NO_DATA_CODE, Const.WARNING_NO_DATA_MSG);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(-4, ex.ToString());
-            }
+                Id = categoryDto.Id,
+                Name = categoryDto.Name
+            };
+
+            return _categoryRepository.UpdateCategory(category);
         }
 
-        public async Task<IBusinessResult> GetById1(int code)
+        public bool DeleteCategory(int categoryId)
         {
-            try
+            var category = _categoryRepository.GetCategoryById(categoryId);
+            if (category == null)
             {
-                var user = await _unitOfWork.CategoryRepository.GetByIdAsync(code);
-                if (user == null)
-                {
-                    return new BusinessResult(Const.WARNING_NO_DATA_CODE, Const.WARNING_NO_DATA_MSG);
-                }
-                return new BusinessResult(Const.SUCCESS_READ_CODE, Const.SUCCESS_READ_MSG, user);
+                return false;
             }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.ERROR_EXCEPTION, ex.Message);
-            }
+
+            category.IsActive = false;
+            return _categoryRepository.UpdateCategory(category);
         }
 
-        public async Task<IBusinessResult> DeleteById1(int code)
+        public ICollection<CategoryDTO> GetAllCategoriesFromData()
         {
-            try
+            var categories = _categoryRepository.GetCategories();
+            return categories.Select(c => new CategoryDTO
             {
-                //var currency = await _currencyRepository.GetByIdAsync(code);
-                var currency = await _unitOfWork.CategoryRepository.GetByIdAsync(code);
-
-                currency.IsActive = true;
-                if (currency != null)
-                {
-                    //var result = await _currencyRepository.RemoveAsync(currency);
-                    var result = await _unitOfWork.CategoryRepository.UpdateAsync(currency);
-                    if (result > 0)
-                    {
-                        return new BusinessResult(Const.SUCCESS_DELETE_CODE, Const.SUCCESS_DELETE_MSG);
-                    }
-                    else
-                    {
-                        return new BusinessResult(Const.FAIL_DELETE_CODE, Const.FAIL_DELETE_MSG);
-                    }
-                }
-                else
-                {
-                    return new BusinessResult(Const.WARNING_NO_DATA_CODE, Const.WARNING_NO_DATA_MSG);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(-4, ex.ToString());
-            }
+                Id = c.Id,
+                Name = c.Name
+            }).ToList();
         }
     }
 }

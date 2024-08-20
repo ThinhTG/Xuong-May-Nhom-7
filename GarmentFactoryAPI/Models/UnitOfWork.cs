@@ -1,6 +1,7 @@
 ﻿using GarmentFactoryAPI.Data;
 using GarmentFactoryAPI.Models;
 using GarmentFactoryAPI.Repositories;
+using GarmentFactoryAPI.Repository;
 
 namespace GarmentFactoryAPI.Data
 {
