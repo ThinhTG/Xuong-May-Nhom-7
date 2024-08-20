@@ -45,7 +45,8 @@ namespace GarmentFactoryAPI.Controllers
                     Code = p.Code,
                     Price = p.Price,
                     CategoryId = p.Category.Id,
-                    UserId = p.User.Id
+                    UserId = p.User.Id,
+                    IsActive = p.IsActive,
                 })
                 .ToList();
 
@@ -88,7 +89,8 @@ namespace GarmentFactoryAPI.Controllers
                     Code = p.Code,
                     Price = p.Price,
                     CategoryId = p.Category.Id,
-                    UserId = p.User.Id
+                    UserId = p.User.Id,
+                    IsActive = p.IsActive
                 })
                 .ToList();
 
@@ -118,6 +120,9 @@ namespace GarmentFactoryAPI.Controllers
                 return NotFound();
 
             var product = _productRepository.GetProductById(productId);
+
+            if(product == null || !product.IsActive)
+                return NotFound();
             
             //map tới thuộc tính của ProductDTO
             var productDto = new ProductDTO
@@ -127,7 +132,8 @@ namespace GarmentFactoryAPI.Controllers
                 Code = product.Code,
                 Price = product.Price,
                 CategoryId = product.Category.Id,  
-                UserId = product.User.Id           
+                UserId = product.User.Id,
+                IsActive = product.IsActive
             };
 
             if (!ModelState.IsValid)
@@ -150,7 +156,7 @@ namespace GarmentFactoryAPI.Controllers
                 return BadRequest("Page number and page size must be greater than 0.");
             }
 
-            var products = _productRepository.GetProductsByName(productName);
+            var products = _productRepository.GetProductsByName(productName).Where(p => p.IsActive).ToList();
 
             if (!products.Any())
                 return NotFound();
@@ -165,7 +171,8 @@ namespace GarmentFactoryAPI.Controllers
                     Code = p.Code,
                     Price = p.Price,
                     CategoryId = p.Category.Id,
-                    UserId = p.User.Id
+                    UserId = p.User.Id,
+                    IsActive = p.IsActive
                 })
                 .ToList();
 
@@ -192,7 +199,7 @@ namespace GarmentFactoryAPI.Controllers
                 return BadRequest("Page number and page size must be greater than 0.");
             }
 
-            var products = _productRepository.GetProductsOfCategory(categoryId);
+            var products = _productRepository.GetProductsOfCategory(categoryId).Where(p => p.IsActive).ToList();
 
             if (!products.Any())
                 return NotFound();
@@ -208,7 +215,8 @@ namespace GarmentFactoryAPI.Controllers
                 Code = p.Code,
                 Price = p.Price,
                 CategoryId = p.Category.Id,
-                UserId = p.User.Id
+                UserId = p.User.Id,
+                IsActive = p.IsActive,
             }).ToList();
 
             var totalProducts = products.Count();
@@ -260,7 +268,8 @@ namespace GarmentFactoryAPI.Controllers
                 Code = product.Code,
                 Price = product.Price,
                 CategoryId = product.Category.Id,
-                UserId = product.User.Id
+                UserId = product.User.Id,
+                IsActive = product.IsActive,
             };
 
             // Trả về thông tin sản phẩm đã tạo
@@ -295,6 +304,7 @@ namespace GarmentFactoryAPI.Controllers
             existingProduct.Price = productDto.Price;
             existingProduct.Category = category;
             existingProduct.User = user;
+            existingProduct.IsActive = productDto.IsActive;
 
             if (!_productRepository.UpdateProduct(existingProduct))
                 return StatusCode(500, "Something went wrong.");

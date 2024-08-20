@@ -28,7 +28,7 @@ namespace GarmentFactoryAPI.Repository
             return _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.User)
-                .Where(p => p.Id == productId && p.IsActive == true)
+                .Where(p => p.Id == productId)
                 .FirstOrDefault();
         }
 
@@ -37,7 +37,7 @@ namespace GarmentFactoryAPI.Repository
             return _context.Products
                 .Include (p => p.Category)
                 .Include (p => p.User)
-                .Where(p => EF.Functions.Like(p.Name.ToLower(), $"%{productName.ToLower()}%") && p.IsActive == true)
+                .Where(p => EF.Functions.Like(p.Name.ToLower(), $"%{productName.ToLower()}%"))
                 .ToList();
         }
 
