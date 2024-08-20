@@ -8,5 +8,6 @@
         // Optionally include other properties if needed
         // e.g., public int UserId { get; set; }
         // e.g., public ICollection<int> AssemblyLineIds { get; set; }
+        public string UserName { get; set; }
     }
 }
