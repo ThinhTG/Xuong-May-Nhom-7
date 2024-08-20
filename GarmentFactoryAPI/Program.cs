@@ -1,6 +1,7 @@
 using GarmentFactoryAPI.Data;
 
 using GarmentFactoryAPI.Interfaces;
+using GarmentFactoryAPI.Repositories;
 using GarmentFactoryAPI.Repository;
 
 using GarmentFactoryAPI.Services;
@@ -16,7 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ITaskProductRepository, TaskProductRepository>();
+builder.Services.AddScoped<ITaskProductService, TaskProductService>();
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -92,6 +96,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 
 // Configure scoped services
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<RoleService>();
 
 var app = builder.Build();
 

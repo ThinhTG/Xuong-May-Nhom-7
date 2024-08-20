@@ -23,13 +23,14 @@ namespace DetMayDemoApp.Controllers
         private readonly DataContext _context;
         private readonly IConfiguration _configuration;
         private readonly UserService _userService; // Add this line
+        private readonly RoleService _roleService; // Add this line
 
-
-        public UserController(DataContext context, IConfiguration configuration, UserService userService)
+        public UserController(DataContext context, IConfiguration configuration, UserService userService, RoleService roleService)
         {
             _context = context;
             _configuration = configuration;
             _userService = userService;
+            _roleService = roleService;
         }
 
         [HttpPost]
@@ -185,6 +186,12 @@ namespace DetMayDemoApp.Controllers
             if (existingUser != null && existingUser.Id != id)
             {
                 return Conflict("Username already exists");
+            }
+
+            var roleExists = await _roleService.RoleExists(userDto.RoleId);
+            if (!roleExists)
+            {
+                return BadRequest("Invalid RoleId. The specified RoleId does not exist.");
             }
 
             // Update the user's properties

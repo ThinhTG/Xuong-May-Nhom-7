@@ -1,6 +1,7 @@
 ﻿using GarmentFactoryAPI.Data;
 using GarmentFactoryAPI.Models;
 using GarmentFactoryAPI.Repositories;
+using GarmentFactoryAPI.Repository;
 
 namespace GarmentFactoryAPI.Data
 {
@@ -14,7 +15,7 @@ namespace GarmentFactoryAPI.Data
         //private AssemblyLineRepository? _assemblyLineRepository;
         //private TaskProductRepository? _taskProductRepository;
         private UserRepository? _userRepository;
-        //private RoleRepository? _roleRepository;
+        private RoleRepository? _roleRepository;
 
         public UnitOfWork(DataContext context)
         {
@@ -85,13 +86,14 @@ namespace GarmentFactoryAPI.Data
             }
         }
 
-        /*        public RoleRepository RoleRepository
-                {
-                    get
-                    {
-                        return _roleRepository ??= new RoleRepository(_context);
-                    }
-                }*/
+        public RoleRepository RoleRepository
+        {
+            get
+            {
+                return _roleRepository ??= new RoleRepository(_context);
+            }
+        }
+
 
         public void Save()
         {
