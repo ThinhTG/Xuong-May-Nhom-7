@@ -40,15 +40,16 @@ namespace GarmentFactoryAPI.Controllers
                 .Where(o => o.IsActive) // Only get active orders
                 .Select(o => new OrderDTO
                 {
-                    Id = o.Id,
+                    OrderId = o.Id,
                     OrderDate = o.OrderDate,
                     TotalPrice = o.TotalPrice,
                     UserId = o.User.Id,
-                    OrderDetails = o.OrderDetails.Select(od => new OrderDetailDTO
+                    OrderDetails = o.OrderDetails.Select(od => new OrderDetailSummaryDTO
                     {
-                        Id = od.Id,
+                        OrderDetailId = od.Id,
                         Quantity = od.Quantity,
-                        ProductId = od.ProductId
+                        ProductId = od.ProductId,
+                   
                     }).ToList()
                 });
 
@@ -105,9 +106,13 @@ namespace GarmentFactoryAPI.Controllers
                         .Take(pageSize)
                         .Select(od => new OrderDetailDTO
                         {
-                            Id = od.Id,
+                            OrderDetailId = od.Id,
                             Quantity = od.Quantity,
-                            ProductId = od.ProductId
+                            ProductId = od.ProductId,
+                            ProductName = od.Product.Name,
+                            Price = od.Product.Price,
+                            ProductCode = od.Product.Code,
+                         
                         }).ToList()
                 })
                 .FirstOrDefault();
@@ -117,10 +122,10 @@ namespace GarmentFactoryAPI.Controllers
                 return NotFound(new { Message = "Order not found." });
             }
 
-            if (!order.IsActive)
-            {
-                return BadRequest(new { Message = "The requested order is inactive." });
-            }
+           // if (!order.IsActive)
+           // {
+           //     return BadRequest(new { Message = "The requested order is inactive." });
+           // }
 
             var totalOrderDetails = _context.OrderDetails
                 .Count(od => od.OrderId == id);
@@ -173,18 +178,15 @@ namespace GarmentFactoryAPI.Controllers
 
             // Return the ID of the created order
 
-            return CreatedAtAction("GetOrder", new { id = order.Id }, orderDto);
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderDto);
+
         }
 
         // PUT: api/Orders/5
         [HttpPut("UpdateOrder/{id}")]
-        public IActionResult PutOrder(int id, OrderDTO orderDto)
+        public ActionResult PutOrder(int id, CreateOrderDTO orderDto)
         {
-            if (id != orderDto.Id)
-            {
-                return BadRequest();
-            }
-
+           
             var order = _context.Orders.FirstOrDefault(o => o.Id == id && o.IsActive);
             if (order == null)
             {
@@ -196,7 +198,7 @@ namespace GarmentFactoryAPI.Controllers
             order.User = _context.Users.Find(orderDto.UserId);
             order.OrderDetails = orderDto.OrderDetails.Select(odDto => new OrderDetail
             {
-                Id = odDto.Id,
+   
                 Quantity = odDto.Quantity,
                 ProductId = odDto.ProductId,
                 OrderId = order.Id
@@ -216,7 +218,7 @@ namespace GarmentFactoryAPI.Controllers
             var order = _context.Orders.Find(id);
             if (order == null)
             {
-                return NotFound();
+                return NotFound("Order not found or is inactive.");
             }
 
             // Instead of removing the order, set IsActive to false
