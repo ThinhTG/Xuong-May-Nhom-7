@@ -1,98 +1,209 @@
-﻿using GarmentFactoryAPI.Services;
-using Microsoft.AspNetCore.Mvc;
+﻿using GarmentFactoryAPI.Data;
+using GarmentFactoryAPI.DTO;
+using GarmentFactoryAPI.Interfaces;
 using GarmentFactoryAPI.Models;
-using GermentFactory.Services;
+using GarmentFactoryAPI.Pagination;
+using GarmentFactoryAPI.Repositories;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace GarmentFactoryAPI.Controllers
 {
+    [Route("api/[controller]")]
+    [ApiController]
     public class CategoryController : ControllerBase
     {
-        private readonly CategoryService _categoryService;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly ICategoryService _categoryService;
+        private readonly DataContext _context;
 
-        public CategoryController(CategoryService categoryService)
+        public CategoryController(ICategoryRepository categoryRepository, DataContext context)
         {
-            _categoryService = categoryService;
+            _categoryRepository = categoryRepository;
+            _context = context;
         }
 
+        // Get all categories with pagination
         [HttpGet]
-        [Route("api/Category/GetCategories")]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Category>))]
-        public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
+        [ProducesResponseType(200, Type = typeof(PagedResult<CategoryDTO>))]
+        public IActionResult GetCategories(int pageNumber = 1, int pageSize = 3)
         {
-            var categories = await _categoryService.GetAll();
-            return Ok(categories);
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest("Page number and page size must be greater than 0.");
+            }
+
+            var allCategories = _categoryRepository.GetCategories();
+
+            var pagedCategories = allCategories
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new CategoryDTO
+                {
+                    Id = c.Id,
+                    Name = c.Name
+                })
+                .ToList();
+
+            var totalCategories = allCategories.Count();
+            var result = new PagedResult<CategoryDTO>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCategories,
+                Items = pagedCategories
+            };
+
+            return Ok(result);
         }
 
-        [HttpGet]
-        [Route("api/Category/GetCategoryById")]
-        [ProducesResponseType(200, Type = typeof(Category))]
-        public async Task<ActionResult<Category>> GetCategoryById(int id)
+        // Get category by ID
+        [HttpGet("{categoryId}")]
+        [ProducesResponseType(200, Type = typeof(CategoryDTO))]
+        [ProducesResponseType(404)]
+        public IActionResult GetCategoryById(int categoryId)
         {
-            var category = await _categoryService.GetById1(id);
+            var category = _categoryRepository.GetCategoryById(categoryId);
             if (category == null)
             {
                 return NotFound();
             }
-            return Ok(category);
+
+            var categoryDto = new CategoryDTO
+            {
+                Id = category.Id,
+                Name = category.Name
+            };
+
+            return Ok(categoryDto);
         }
 
+        // Search categories by name
+        [HttpGet("search/{categoryName}")]
+        [ProducesResponseType(200, Type = typeof(PagedResult<CategoryDTO>))]
+        [ProducesResponseType(404)]
+        public IActionResult GetCategoriesByName(string categoryName, int pageNumber = 1, int pageSize = 3)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+            {
+                return BadRequest("Category name cannot be empty.");
+            }
+
+            var categories = _categoryRepository.GetCategoriesByName(categoryName);
+
+            if (!categories.Any())
+            {
+                return NotFound();
+            }
+
+            var pagedCategories = categories
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new CategoryDTO
+                {
+                    Id = c.Id,
+                    Name = c.Name
+                })
+                .ToList();
+
+            var totalCategories = categories.Count();
+            var result = new PagedResult<CategoryDTO>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCategories,
+                Items = pagedCategories
+            };
+
+            return Ok(result);
+        }
+
+        // Create a new category
         [HttpPost]
-        [Route("api/Category/CreateCategory")]
-        [ProducesResponseType(201, Type = typeof(Category))]
-        public async Task<ActionResult<Category>> CreateCategory([FromBody] Category category)
+        [ProducesResponseType(201, Type = typeof(CategoryDTO))]
+        [ProducesResponseType(400)]
+        public IActionResult CreateCategory([FromBody] CategoryDTO categoryDto)
         {
-            if (category == null)
+            if (categoryDto == null)
             {
-                return BadRequest("Category data is null");
+                return BadRequest("Category data is invalid.");
             }
 
-            var result = await _categoryService.Save(category);
-            if (result.Code != Const.SUCCESS_CREATE_CODE)
+            var category = new Category
             {
-                return StatusCode(500, result.Message);
+                Name = categoryDto.Name
+            };
+
+            if (!_categoryRepository.CreateCategory(category))
+            {
+                return StatusCode(500, "Something went wrong.");
             }
 
-            var createdCategory = result.Data as Category;
-            if (createdCategory == null)
+            var createdCategoryDto = new CategoryDTO
             {
-                return StatusCode(500, "Error creating category");
-            }
+                Id = category.Id,
+                Name = category.Name
+            };
 
-            return CreatedAtAction("GetCategoryById", new { id = createdCategory.Id }, createdCategory);
+            return CreatedAtAction(nameof(GetCategoryById), new { categoryId = createdCategoryDto.Id }, createdCategoryDto);
         }
 
-
-        [HttpPut]
-        [Route("api/Category/UpdateCategory")]
-        [ProducesResponseType(200, Type = typeof(Category))]
-        public async Task<ActionResult<Category>> UpdateCategory([FromBody] Category category)
+        // Update an existing category
+        [HttpPut("{categoryId}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public IActionResult UpdateCategory(int categoryId, [FromBody] CategoryDTO categoryDto)
         {
-            if (category == null)
+            if (categoryDto == null)
             {
-                return BadRequest("Category data is null");
+                return BadRequest("Category data is invalid.");
             }
 
-            var updatedCategory = await _categoryService.Update(category);
-            if (updatedCategory == null)
+            // Retrieve the existing category from the repository
+            var existingCategory = _categoryRepository.GetCategoryById(categoryId);
+            if (existingCategory == null)
             {
                 return NotFound();
             }
 
-            return Ok(updatedCategory);
-        }
+            // Update only the Name field of the existing category
+            existingCategory.Name = categoryDto.Name;
 
-        [HttpDelete]
-        [Route("api/Category/DeleteCategory")]
-        [ProducesResponseType(204)]
-        public async Task<ActionResult> DeleteCategory(int id)
-        {
-            var deletedCategory = await _categoryService.DeleteById1(id);
-            if (deletedCategory.Code == Const.SUCCESS_DELETE_CODE)
+            // Update the category in the repository
+            if (!_categoryRepository.UpdateCategory(existingCategory))
             {
-                return Ok(deletedCategory.Message);
+                return StatusCode(500, "Something went wrong.");
             }
 
-            return NotFound(deletedCategory.Message);
+            return NoContent();
         }
+
+        // DELETE: api/Categories/5
+        [HttpDelete("DeleteCategory/{id}")]
+        public IActionResult DeleteCategory(int id)
+        {
+            // Find the category by id
+            var category = _context.Categories.Find(id);
+
+            // If the category is not found, return a 404 Not Found status
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            // Set IsActive to false instead of removing the category
+            category.IsActive = false;
+            _context.Entry(category).State = EntityState.Modified;
+
+            // Save changes to the database
+            _context.SaveChanges();
+
+            // Return a 204 No Content status to indicate success
+            return NoContent();
+        }
+
+
     }
 }
