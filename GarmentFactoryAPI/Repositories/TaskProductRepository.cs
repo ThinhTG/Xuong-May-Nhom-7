@@ -21,7 +21,6 @@ namespace GarmentFactoryAPI.Repository
             return _context.TaskProducts
                 .Include(tp => tp.User)
                 .Include(tp => tp.AssemblyLines)
-                .Where(tp => tp.IsActive)
                 .OrderBy(tp => tp.Id)
                 .ToList();
         }
@@ -31,7 +30,7 @@ namespace GarmentFactoryAPI.Repository
             return _context.TaskProducts
                 .Include(tp => tp.User)
                 .Include(tp => tp.AssemblyLines)
-                .FirstOrDefault(tp => tp.Id == taskProductId && tp.IsActive);
+                .FirstOrDefault(tp => tp.Id == taskProductId);
         }
 
         public ICollection<TaskProduct> GetTaskProductsByName(string taskProductName)
