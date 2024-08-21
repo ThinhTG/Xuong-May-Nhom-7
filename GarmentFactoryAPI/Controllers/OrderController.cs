@@ -24,7 +24,7 @@ namespace GarmentFactoryAPI.Controllers
             _configuration = configuration;
         }
         // GET: api/Orders/GetAllOrders (With Pagination)
-        [HttpGet("GetAllOrders")]
+        [HttpGet("GetAllOrdersIsActive")]
         [ProducesResponseType(200, Type = typeof(PagedResult<OrderDTO>))]
         public IActionResult GetOrders(int pageNumber = 1, int pageSize = 10)
         {
@@ -50,6 +50,58 @@ namespace GarmentFactoryAPI.Controllers
                         Quantity = od.Quantity,
                         ProductId = od.ProductId,
                    
+                    }).ToList()
+                });
+
+            var pagedOrders = allOrders
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var totalOrders = allOrders.Count();
+
+            var result = new PagedResult<OrderDTO>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalOrders,
+                Items = pagedOrders
+            };
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok(result);
+        }
+
+        // GET: api/Orders/GetAllOrdersFromData (With Pagination)
+        [HttpGet("GetAllOrdersFromData")]
+        [ProducesResponseType(200, Type = typeof(PagedResult<OrderDTO>))]
+        public IActionResult GetOrder(int pageNumber = 1, int pageSize = 10)
+        {
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest("Page number and page size must be greater than 0.");
+            }
+
+            var allOrders = _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .Select(o => new OrderDTO
+                {
+                    OrderId = o.Id,
+                    OrderDate = o.OrderDate,
+                    TotalPrice = o.TotalPrice,
+                    UserId = o.User.Id,
+                    OrderDetails = o.OrderDetails.Select(od => new OrderDetailSummaryDTO
+                    {
+                        OrderDetailId = od.Id,
+                        Quantity = od.Quantity,
+                        ProductId = od.ProductId,
+
                     }).ToList()
                 });
 
@@ -119,13 +171,13 @@ namespace GarmentFactoryAPI.Controllers
 
             if (order == null)
             {
-                return NotFound(new { Message = "Order not found." });
+                return NotFound("Order not found." );
             }
 
-           // if (!order.IsActive)
-           // {
-           //     return BadRequest(new { Message = "The requested order is inactive." });
-           // }
+             if (!order.IsActive)
+             {
+               return NotFound("The requested order is inactive.");
+             }
 
             var totalOrderDetails = _context.OrderDetails
                 .Count(od => od.OrderId == id);
@@ -160,6 +212,12 @@ namespace GarmentFactoryAPI.Controllers
         [HttpPost("CreateOrder")]
         public ActionResult<OrderDTO> PostOrder(CreateOrderDTO orderDto)
         {
+            // Kiểm tra nếu OrderDate nhỏ hơn ngày hiện tại
+            if (orderDto.OrderDate.Date < DateTime.Now.Date)
+            {
+                return NotFound("Order date cannot be in the past.");
+            }
+
             var order = new Order
             {
                 OrderDate = orderDto.OrderDate,
@@ -176,29 +234,40 @@ namespace GarmentFactoryAPI.Controllers
             _context.Orders.Add(order);
             _context.SaveChanges();
 
-            // Return the ID of the created order
-
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderDto);
-
         }
+
 
         // PUT: api/Orders/5
         [HttpPut("UpdateOrder/{id}")]
         public ActionResult PutOrder(int id, CreateOrderDTO orderDto)
         {
-           
-            var order = _context.Orders.FirstOrDefault(o => o.Id == id && o.IsActive);
+            // Kiểm tra nếu OrderDate nhỏ hơn ngày hiện tại
+            if (orderDto.OrderDate.Date < DateTime.Now.Date)
+            {
+                return NotFound("Order date cannot be in the past.");
+            }
+
+            var order = _context.Orders
+                                .Include(o => o.OrderDetails)
+                                .FirstOrDefault(o => o.Id == id && o.IsActive);
+
             if (order == null)
             {
                 return NotFound("Order not found or is inactive.");
             }
 
+            // Xóa các OrderDetails hiện có
+            _context.OrderDetails.RemoveRange(order.OrderDetails);
+
+            // Cập nhật các trường của đơn hàng
             order.OrderDate = orderDto.OrderDate;
             order.TotalPrice = orderDto.TotalPrice;
             order.User = _context.Users.Find(orderDto.UserId);
+
+            // Thêm các OrderDetails mới từ DTO
             order.OrderDetails = orderDto.OrderDetails.Select(odDto => new OrderDetail
             {
-   
                 Quantity = odDto.Quantity,
                 ProductId = odDto.ProductId,
                 OrderId = order.Id
@@ -210,6 +279,24 @@ namespace GarmentFactoryAPI.Controllers
             return NoContent();
         }
 
+
+        // PUT: api/Orders/UpdateOrderStatus/{id}
+        [HttpPut("UpdateOrderStatus/{id}")]
+        public ActionResult UpdateOrderStatus(int id, bool isActive)
+        {
+            var order = _context.Orders.FirstOrDefault(o => o.Id == id);
+            if (order == null)
+            {
+                return NotFound("Order not found.");
+            }
+
+            order.IsActive = isActive;
+
+            _context.Entry(order).State = EntityState.Modified;
+            _context.SaveChanges();
+
+            return NoContent();
+        }
 
         // DELETE: api/Orders/5
         [HttpDelete("DeleteOrder/{id}")]
