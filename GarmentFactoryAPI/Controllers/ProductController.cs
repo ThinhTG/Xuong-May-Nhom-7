@@ -15,10 +15,12 @@ namespace GarmentFactoryAPI.Controllers
     {
         private readonly IProductRepository _productRepository;
         private readonly DataContext _context;
-        
-        public ProductController(IProductRepository productRepository, DataContext context)
+        private readonly IProductService _productService;
+
+        public ProductController(IProductRepository productRepository, DataContext context, IProductService productService)
         {
             _productRepository = productRepository;
+            _productService = productService;
             _context = context;
         }
 
@@ -32,32 +34,12 @@ namespace GarmentFactoryAPI.Controllers
                 return BadRequest("Page number and page size must be greater than 0.");
             }
 
-            var allProducts = _productRepository.GetProducts();
+            var result = _productService.GetPagedProducts(pageNumber, pageSize);
 
-            // Thêm phân trang
-            var pagedProducts = allProducts
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(p => new ProductDTO
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Code = p.Code,
-                    Price = p.Price,
-                    CategoryId = p.Category.Id,
-                    UserId = p.User.Id,
-                    IsActive = p.IsActive,
-                })
-                .ToList();
-
-            var totalProducts = allProducts.Count();
-            var result = new PagedResult<ProductDTO>
+            if (result == null)
             {
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                TotalCount = totalProducts,
-                Items = pagedProducts
-            };
+                return NotFound();
+            }
 
             if (!ModelState.IsValid)
             {
@@ -76,32 +58,10 @@ namespace GarmentFactoryAPI.Controllers
                 return BadRequest("Page number and page size must be greater than 0.");
             }
 
-            var allProducts = _productRepository.GetAllProductsFromData();
+            var result = _productService.GetAllProductsFromData(pageNumber, pageSize);
 
-            // Thêm phân trang
-            var pagedProducts = allProducts
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(p => new ProductDTO
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Code = p.Code,
-                    Price = p.Price,
-                    CategoryId = p.Category.Id,
-                    UserId = p.User.Id,
-                    IsActive = p.IsActive
-                })
-                .ToList();
-
-            var totalProducts = allProducts.Count();
-            var result = new PagedResult<ProductDTO>
-            {
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                TotalCount = totalProducts,
-                Items = pagedProducts
-            };
+            if (result == null)
+                return NotFound();
 
             if (!ModelState.IsValid)
             {
