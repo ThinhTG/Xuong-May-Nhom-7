@@ -3,6 +3,7 @@ using GarmentFactoryAPI.DTO;
 using GarmentFactoryAPI.Interfaces;
 using GarmentFactoryAPI.Models;
 using GarmentFactoryAPI.Pagination;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -85,6 +86,7 @@ namespace GarmentFactoryAPI.Controllers
             return Ok(taskProductDto);
         }
 
+        [Authorize(Policy = "RequireAdminOrTruongChuyenRole")]
         // Create a new task product
         [HttpPost]
         [ProducesResponseType(201, Type = typeof(TaskProductDTO))]
@@ -129,7 +131,7 @@ namespace GarmentFactoryAPI.Controllers
 
 
 
-
+        [Authorize(Policy = "RequireAdminOrTruongChuyenRole")]
         // Update an existing task product
         [HttpPut("{id}")]
         [ProducesResponseType(204)]
@@ -171,7 +173,7 @@ namespace GarmentFactoryAPI.Controllers
             return NoContent();
         }
 
-
+        [Authorize(Policy = "RequireAdminOrTruongChuyenRole")]
         // Delete a task product (Set IsActive to false)
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]

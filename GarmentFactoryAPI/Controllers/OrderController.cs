@@ -3,6 +3,7 @@ using GarmentFactoryAPI.DTO;
 using GarmentFactoryAPI.DTOs;
 using GarmentFactoryAPI.Models;
 using GarmentFactoryAPI.Pagination;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -207,7 +208,7 @@ namespace GarmentFactoryAPI.Controllers
 
 
 
-
+        [Authorize(Policy = "RequireStaffRole")]
         // POST: api/Orders
         [HttpPost("CreateOrder")]
         public ActionResult<OrderDTO> PostOrder(CreateOrderDTO orderDto)
@@ -237,7 +238,7 @@ namespace GarmentFactoryAPI.Controllers
             return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, orderDto);
         }
 
-
+        [Authorize(Policy = "RequireStaffRole")]
         // PUT: api/Orders/5
         [HttpPut("UpdateOrder/{id}")]
         public ActionResult PutOrder(int id, CreateOrderDTO orderDto)
@@ -279,7 +280,7 @@ namespace GarmentFactoryAPI.Controllers
             return NoContent();
         }
 
-
+        [Authorize(Policy = "RequireStaffRole")]
         // PUT: api/Orders/UpdateOrderStatus/{id}
         [HttpPut("UpdateOrderStatus/{id}")]
         public ActionResult UpdateOrderStatus(int id, bool isActive)
@@ -298,6 +299,7 @@ namespace GarmentFactoryAPI.Controllers
             return NoContent();
         }
 
+        [Authorize(Policy = "RequireStaffRole")]
         // DELETE: api/Orders/5
         [HttpDelete("DeleteOrder/{id}")]
         public IActionResult DeleteOrder(int id)

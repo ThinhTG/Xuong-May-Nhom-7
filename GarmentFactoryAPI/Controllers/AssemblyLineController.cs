@@ -2,6 +2,7 @@
 using GarmentFactoryAPI.DTO;
 using GarmentFactoryAPI.Models;
 using GarmentFactoryAPI.Pagination;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -88,6 +89,7 @@ public class AssemblyLinesController : ControllerBase
         return assemblyLineDTO;
     }
 
+    [Authorize(Policy = "RequireAdminOrTruongChuyenRole")]
     [HttpPut("{id}")]
     public async Task<IActionResult> PutAssemblyLine(int id, AssemblyLineDTO assemblyLineDto)
     {
@@ -128,6 +130,8 @@ public class AssemblyLinesController : ControllerBase
         return NoContent();
     }
 
+
+    [Authorize(Policy = "RequireAdminOrTruongChuyenRole")]
     // POST: api/AssemblyLines
     [HttpPost]
     public async Task<ActionResult<AssemblyLineDTO>> PostAssemblyLine(AssemblyLineDTO assemblyLineDto)
@@ -160,6 +164,7 @@ public class AssemblyLinesController : ControllerBase
     }
 
 
+    [Authorize(Policy = "RequireAdminOrTruongChuyenRole")]
     // DELETE: api/AssemblyLines/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAssemblyLine(int id)
