@@ -1,4 +1,4 @@
-using GarmentFactoryAPI.Data;
+﻿using GarmentFactoryAPI.Data;
 
 using GarmentFactoryAPI.Interfaces;
 using GarmentFactoryAPI.Repositories;
@@ -76,6 +76,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 context.Response.StatusCode = 401;
                 context.Response.ContentType = "application/json";
                 return context.Response.WriteAsync("Unauthorized access.");
+            },
+            OnForbidden = context =>
+            {
+                // Xử lý khi người dùng đã xác thực nhưng không có quyền truy cập
+                context.Response.StatusCode = 403;
+                context.Response.ContentType = "application/json";
+                return context.Response.WriteAsync("{\"error\": \"Forbidden: You do not have permission to perform this action.\"}");
             }
         };
     });
@@ -84,6 +91,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("RequireAdminRole", policy => policy.RequireClaim("roleId", "2"));
+    options.AddPolicy("RequireAdminOrTruongChuyenRole", policy => policy.RequireClaim("roleId", "2", "3"));
+    options.AddPolicy("RequireStaffRole", policy => policy.RequireClaim("roleId", "1"));
+    options.AddPolicy("RequireAdminOrStaffOrTCRole", policy => policy.RequireClaim("roleId", "1", "2", "3"));
 });
 
 

@@ -6,6 +6,7 @@ using GarmentFactoryAPI.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GarmentFactoryAPI.Pagination;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GarmentFactoryAPI.Controllers
 {
@@ -23,6 +24,7 @@ namespace GarmentFactoryAPI.Controllers
         }
 
         //Lấy tất cả các product đang Active
+        
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(PagedResult<ProductDTO>))]
         public IActionResult GetProducts(int pageNumber = 1, int pageSize = 3)
@@ -231,6 +233,7 @@ namespace GarmentFactoryAPI.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "RequireAdminRole")]
         [HttpPost]
         [ProducesResponseType(201, Type = typeof(ProductDTO))]
         [ProducesResponseType(400)]
@@ -277,6 +280,7 @@ namespace GarmentFactoryAPI.Controllers
             return CreatedAtAction(nameof(GetProductById), new { productId = createdProductDto.Id }, createdProductDto);
         }
 
+        [Authorize(Policy = "RequireAdminRole")]
         [HttpPut("{productId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
@@ -313,6 +317,7 @@ namespace GarmentFactoryAPI.Controllers
             return NoContent();
         }
 
+        [Authorize(Policy = "RequireAdminRole")]    
         [HttpDelete("{productId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]

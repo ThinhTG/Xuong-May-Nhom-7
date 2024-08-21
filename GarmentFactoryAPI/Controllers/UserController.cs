@@ -145,7 +145,7 @@ namespace DetMayDemoApp.Controllers
                 string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
                 return Ok(new { token = tokenString, User = user });
             }
-            return BadRequest("Invalid credentials");
+            return BadRequest("Wrong username or password, is blocked");
         }
 
         [Authorize(Policy = "RequireAdminRole")]
