@@ -48,7 +48,7 @@ namespace GarmentFactoryAPI.Controllers
             return Ok(result);
         }
 
-        //Lấy tất cả các product đang Active
+        //Lấy tất cả các product 
         [HttpGet("allProductFromData")]
         [ProducesResponseType(200, Type = typeof(PagedResult<ProductDTO>))]
         public IActionResult GetAllProductsFromData(int pageNumber = 1, int pageSize = 3)
@@ -79,27 +79,15 @@ namespace GarmentFactoryAPI.Controllers
             if(!_productRepository.HasProduct(productId))
                 return NotFound();
 
-            var product = _productRepository.GetProductById(productId);
+            var product = _productService.GetProductById(productId);
 
             if(product == null || !product.IsActive)
                 return NotFound();
-            
-            //map tới thuộc tính của ProductDTO
-            var productDto = new ProductDTO
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Code = product.Code,
-                Price = product.Price,
-                CategoryId = product.Category.Id,  
-                UserId = product.User.Id,
-                IsActive = product.IsActive
-            };
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-                return Ok(productDto);
+                return Ok(product);
         }
 
         //Search product theo tên
@@ -116,36 +104,12 @@ namespace GarmentFactoryAPI.Controllers
                 return BadRequest("Page number and page size must be greater than 0.");
             }
 
-            var products = _productRepository.GetProductsByName(productName).Where(p => p.IsActive).ToList();
+            var products = _productService.GetProductsByName(productName, pageNumber, pageSize);
 
-            if (!products.Any())
+            if (products == null || !products.Items.Any())
                 return NotFound();
 
-            var pagedProducts = products
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(p => new ProductDTO
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Code = p.Code,
-                    Price = p.Price,
-                    CategoryId = p.Category.Id,
-                    UserId = p.User.Id,
-                    IsActive = p.IsActive
-                })
-                .ToList();
-
-            var totalProducts = products.Count();
-            var result = new PagedResult<ProductDTO>
-            {
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                TotalCount = totalProducts,
-                Items = pagedProducts
-            };
-
-            return Ok(result);
+            return Ok(products);
         }
 
         //Lấy product dựa trên category Id
@@ -159,82 +123,32 @@ namespace GarmentFactoryAPI.Controllers
                 return BadRequest("Page number and page size must be greater than 0.");
             }
 
-            var products = _productRepository.GetProductsOfCategory(categoryId).Where(p => p.IsActive).ToList();
+            var products = _productService.GetProductsOfCategory(categoryId, pageNumber, pageSize);
 
-            if (!products.Any())
+            if (!products.Items.Any())
                 return NotFound();
 
-            //map tới thuộc tính của ProductDTO
-            var pagedProducts = products
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(p => new ProductDTO
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Code = p.Code,
-                Price = p.Price,
-                CategoryId = p.Category.Id,
-                UserId = p.User.Id,
-                IsActive = p.IsActive,
-            }).ToList();
-
-            var totalProducts = products.Count();
-            var result = new PagedResult<ProductDTO>
-            {
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                TotalCount = totalProducts,
-                Items = pagedProducts
-            };
-
-            return Ok(result);
+            return Ok(products);
         }
 
         [HttpPost]
         [ProducesResponseType(201, Type = typeof(ProductDTO))]
         [ProducesResponseType(400)]
         public IActionResult CreateProduct([FromBody] ProductDTO productDto)
-        {         
-            if (productDto == null)
-                return BadRequest("Data invalid.");
-
-            var category = _context.Categories.Find(productDto.CategoryId);
-            var user = _context.Users.Find(productDto.UserId);
-
-            if (category == null)
-                return BadRequest("ID category is invalid.");
-
-            if (user == null)
-                return BadRequest("ID user is invalid.");
-
-            var product = new Product
+        {
+            try
             {
-                Name = productDto.Name,
-                Code = productDto.Code,
-                Price = productDto.Price,
-                Category = category,
-                User = user,
-                IsActive = true,
-            };
-
-            if (!_productRepository.CreateProduct(product))
+                var createdProduct = _productService.CreateProduct(productDto);
+                return CreatedAtAction(nameof(GetProductById), new { productId = createdProduct.Id }, createdProduct);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
                 return StatusCode(500, "Something went wrong.");
-
-            // Tạo DTO cho sản phẩm đã được tạo
-            var createdProductDto = new ProductDTO
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Code = product.Code,
-                Price = product.Price,
-                CategoryId = product.Category.Id,
-                UserId = product.User.Id,
-                IsActive = product.IsActive,
-            };
-
-            // Trả về thông tin sản phẩm đã tạo
-            return CreatedAtAction(nameof(GetProductById), new { productId = createdProductDto.Id }, createdProductDto);
+            }
         }
 
         [HttpPut("{productId}")]
@@ -243,34 +157,25 @@ namespace GarmentFactoryAPI.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateProduct(int productId, [FromBody] ProductDTO productDto)
         {
-            if (productDto == null || productId != productDto.Id)
-                return BadRequest("Product data is invalid.");
-
-            var existingProduct = _productRepository.GetProductById(productId);
-
-            if (existingProduct == null)
+            try
+            {
+                if (_productService.UpdateProduct(productId, productDto))
+                    return NoContent();
+                else
+                    return StatusCode(500, "Something went wrong.");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException)
+            {
                 return NotFound();
-
-            var category = _context.Categories.Find(productDto.CategoryId);
-            var user = _context.Users.Find(productDto.UserId);
-
-            if (category == null)
-                return BadRequest("ID category is invalid.");
-
-            if (user == null)
-                return BadRequest("ID user is invalid.");
-
-            existingProduct.Name = productDto.Name;
-            existingProduct.Code = productDto.Code;
-            existingProduct.Price = productDto.Price;
-            existingProduct.Category = category;
-            existingProduct.User = user;
-            existingProduct.IsActive = productDto.IsActive;
-
-            if (!_productRepository.UpdateProduct(existingProduct))
+            }
+            catch (Exception)
+            {
                 return StatusCode(500, "Something went wrong.");
-
-            return NoContent();
+            }
         }
 
         [HttpDelete("{productId}")]
@@ -279,17 +184,21 @@ namespace GarmentFactoryAPI.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteProduct(int productId)
         {
-            var product = _productRepository.GetProductById(productId);
-
-            if (product == null)
+            try
+            {
+                if (_productService.DeleteProduct(productId))
+                    return NoContent();
+                else
+                    return StatusCode(500, "Something went wrong.");
+            }
+            catch (KeyNotFoundException)
+            {
                 return NotFound();
-
-            product.IsActive = false;
-
-            if (!_productRepository.UpdateProduct(product))
+            }
+            catch (Exception)
+            {
                 return StatusCode(500, "Something went wrong.");
-
-            return NoContent();
+            }
         }
 
 
