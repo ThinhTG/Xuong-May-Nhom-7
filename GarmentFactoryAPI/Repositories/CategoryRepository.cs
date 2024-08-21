@@ -18,34 +18,12 @@ namespace GarmentFactoryAPI.Repository
 
         public ICollection<Category> GetCategories()
         {
-            return _context.Categories
-                .Where(c => c.IsActive == true)
-                .OrderBy(c => c.Id)
-                .ToList();
+            return _context.Categories.ToList();
         }
 
         public Category GetCategoryById(int categoryId)
         {
-            return _context.Categories
-                .Where(c => c.Id == categoryId && c.IsActive == true)
-                .FirstOrDefault();
-        }
-
-        public ICollection<Category> GetCategoriesByName(string categoryName)
-        {
-            return _context.Categories
-                .Where(c => EF.Functions.Like(c.Name.ToLower(), $"%{categoryName.ToLower()}%") && c.IsActive == true)
-                .ToList();
-        }
-
-        public bool HasCategory(int categoryId)
-        {
-            return _context.Categories.Any(c => c.Id == categoryId);
-        }
-
-        public bool HasCategory(string categoryName)
-        {
-            return _context.Categories.Any(c => c.Name == categoryName);
+            return _context.Categories.Find(categoryId);
         }
 
         public bool CreateCategory(Category category)
@@ -62,20 +40,13 @@ namespace GarmentFactoryAPI.Repository
 
         public bool DeleteCategory(Category category)
         {
-            _context.Categories.Update(category);
+            _context.Categories.Remove(category);
             return Save();
         }
 
         public bool Save()
         {
             return _context.SaveChanges() > 0;
-        }
-
-        public ICollection<Category> GetAllCategoriesFromData()
-        {
-            return _context.Categories
-                .OrderBy(c => c.Id)
-                .ToList();
         }
     }
 }

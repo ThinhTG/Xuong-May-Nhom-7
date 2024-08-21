@@ -1,4 +1,5 @@
 ﻿using GarmentFactoryAPI.Models;
+using System.Collections.Generic;
 
 namespace GarmentFactoryAPI.Interfaces
 {
@@ -6,10 +7,6 @@ namespace GarmentFactoryAPI.Interfaces
     {
         ICollection<Category> GetCategories();
         Category GetCategoryById(int categoryId);
-        ICollection<Category> GetCategoriesByName(string categoryName);
-
-        bool HasCategory(int categoryId);
-        bool HasCategory(string categoryName);
         bool CreateCategory(Category category);
         bool UpdateCategory(Category category);
         bool DeleteCategory(Category category);
