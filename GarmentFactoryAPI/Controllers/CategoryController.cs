@@ -24,6 +24,7 @@ namespace GarmentFactoryAPI.Controllers
             _context = context;
         }
 
+
         // Get all categories with pagination
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(PagedResult<CategoryDTO>))]
@@ -42,7 +43,8 @@ namespace GarmentFactoryAPI.Controllers
                 .Select(c => new CategoryDTO
                 {
                     Id = c.Id,
-                    Name = c.Name
+                    Name = c.Name,
+                    IsActive = c.IsActive
                 })
                 .ToList();
 
@@ -132,7 +134,8 @@ namespace GarmentFactoryAPI.Controllers
 
             var category = new Category
             {
-                Name = categoryDto.Name
+                Name = categoryDto.Name,
+                IsActive = true // Automatically set IsActive to true for a new category
             };
 
             if (!_categoryRepository.CreateCategory(category))
@@ -143,7 +146,8 @@ namespace GarmentFactoryAPI.Controllers
             var createdCategoryDto = new CategoryDTO
             {
                 Id = category.Id,
-                Name = category.Name
+                Name = category.Name,
+                IsActive = category.IsActive
             };
 
             return CreatedAtAction(nameof(GetCategoryById), new { categoryId = createdCategoryDto.Id }, createdCategoryDto);
