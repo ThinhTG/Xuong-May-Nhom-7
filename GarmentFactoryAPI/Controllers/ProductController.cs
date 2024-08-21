@@ -317,7 +317,7 @@ namespace GarmentFactoryAPI.Controllers
             return NoContent();
         }
 
-        [Authorize(Policy = "RequireAdminRole")]    
+        [Authorize(Policy = "RequireAdminRole")]
         [HttpDelete("{productId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
