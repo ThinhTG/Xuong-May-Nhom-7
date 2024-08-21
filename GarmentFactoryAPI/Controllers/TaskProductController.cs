@@ -86,29 +86,44 @@ namespace GarmentFactoryAPI.Controllers
         [ProducesResponseType(400)]
         public IActionResult CreateTaskProduct([FromBody] TaskProductDTO taskProductDto)
         {
-            if (taskProductDto == null)
+            if (taskProductDto == null || string.IsNullOrEmpty(taskProductDto.UserName))
             {
                 return BadRequest("Task product data is invalid.");
             }
 
+            // Find the User by UserName
+            var user = _context.Users.FirstOrDefault(u => u.Username == taskProductDto.UserName);
+            if (user == null)
+            {
+                return BadRequest("User does not exist.");
+            }
+
             var taskProduct = new TaskProduct
             {
-                Name = taskProductDto.Name
+                Name = taskProductDto.Name,
+                User = user,
+                IsActive = true, // Setting IsActive to true for a new task product
+                AssemblyLines = new List<AssemblyLine>() // Initialize an empty list for AssemblyLines
             };
 
             if (!_taskProductRepository.CreateTaskProduct(taskProduct))
             {
-                return StatusCode(500, "Something went wrong.");
+                return StatusCode(500, "Something went wrong while creating the task product.");
             }
 
             var createdTaskProductDto = new TaskProductDTO
             {
                 Id = taskProduct.Id,
-                Name = taskProduct.Name
+                Name = taskProduct.Name,
+                IsActive = taskProduct.IsActive,
+                UserName = user.Username
             };
 
             return CreatedAtAction(nameof(GetTaskProductById), new { id = createdTaskProductDto.Id }, createdTaskProductDto);
         }
+
+
+
 
         // Update an existing task product
         [HttpPut("{id}")]
@@ -117,7 +132,7 @@ namespace GarmentFactoryAPI.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateTaskProduct(int id, [FromBody] TaskProductDTO taskProductDto)
         {
-            if (taskProductDto == null || id != taskProductDto.Id)
+            if (taskProductDto == null)
             {
                 return BadRequest("Task product data is invalid.");
             }
@@ -129,14 +144,28 @@ namespace GarmentFactoryAPI.Controllers
             }
 
             existingTaskProduct.Name = taskProductDto.Name;
+            existingTaskProduct.IsActive = taskProductDto.IsActive;
+
+            // Update the User if UserName is provided
+            if (!string.IsNullOrEmpty(taskProductDto.UserName))
+            {
+                var user = _context.Users.FirstOrDefault(u => u.Username == taskProductDto.UserName);
+                if (user == null)
+                {
+                    return BadRequest("User does not exist.");
+                }
+
+                existingTaskProduct.User = user;
+            }
 
             if (!_taskProductRepository.UpdateTaskProduct(existingTaskProduct))
             {
-                return StatusCode(500, "Something went wrong.");
+                return StatusCode(500, "Something went wrong while updating the task product.");
             }
 
             return NoContent();
         }
+
 
         // Delete a task product (Set IsActive to false)
         [HttpDelete("{id}")]
