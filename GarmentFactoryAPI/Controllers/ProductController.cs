@@ -214,7 +214,8 @@ namespace GarmentFactoryAPI.Controllers
                 Code = productDto.Code,
                 Price = productDto.Price,
                 Category = category,
-                User = user
+                User = user,
+                IsActive = true,
             };
 
             if (!_productRepository.CreateProduct(product))

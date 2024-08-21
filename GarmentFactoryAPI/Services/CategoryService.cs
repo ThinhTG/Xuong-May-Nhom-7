@@ -22,7 +22,6 @@ namespace GarmentFactoryAPI.Services
             {
                 Id = c.Id,
                 Name = c.Name
-     
             }).ToList();
         }
 
@@ -41,23 +40,12 @@ namespace GarmentFactoryAPI.Services
             };
         }
 
-        public ICollection<CategoryDTO> GetCategoriesByName(string categoryName)
-        {
-            var categories = _categoryRepository.GetCategoriesByName(categoryName);
-            return categories.Select(c => new CategoryDTO
-            {
-                Id = c.Id,
-                Name = c.Name
-              
-            }).ToList();
-        }
-
         public bool CreateCategory(CategoryDTO categoryDto)
         {
             var category = new Category
             {
                 Name = categoryDto.Name,
-              
+                IsActive = true // Set default value for new categories
             };
 
             return _categoryRepository.CreateCategory(category);
@@ -69,6 +57,7 @@ namespace GarmentFactoryAPI.Services
             {
                 Id = categoryDto.Id,
                 Name = categoryDto.Name
+                // No need to handle IsActive here; it should not be modified by updates
             };
 
             return _categoryRepository.UpdateCategory(category);
@@ -82,18 +71,8 @@ namespace GarmentFactoryAPI.Services
                 return false;
             }
 
-            category.IsActive = false;
+            category.IsActive = false; // Soft delete
             return _categoryRepository.UpdateCategory(category);
-        }
-
-        public ICollection<CategoryDTO> GetAllCategoriesFromData()
-        {
-            var categories = _categoryRepository.GetCategories();
-            return categories.Select(c => new CategoryDTO
-            {
-                Id = c.Id,
-                Name = c.Name
-            }).ToList();
         }
     }
 }
