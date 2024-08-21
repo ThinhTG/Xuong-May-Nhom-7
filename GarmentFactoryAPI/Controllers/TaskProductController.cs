@@ -43,7 +43,9 @@ namespace GarmentFactoryAPI.Controllers
                     Id = tp.Id,
                     Name = tp.Name,
                     UserName = tp.User.Username,
+
                     IsActive=tp.IsActive
+
                 })
                 .ToList();
 
@@ -77,6 +79,7 @@ namespace GarmentFactoryAPI.Controllers
                 Name = taskProduct.Name,
                 UserName = taskProduct.User.Username,
                 IsActive = taskProduct.IsActive
+
             };
 
             return Ok(taskProductDto);
