@@ -136,7 +136,20 @@ public class AssemblyLinesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<AssemblyLineDTO>> PostAssemblyLine(AssemblyLineDTO assemblyLineDto)
     {
-        // Map the DTO to the entity
+        // Check EndDate > StartDate
+        if (assemblyLineDto.EndDate <= assemblyLineDto.StartDate)
+        {
+            return BadRequest("EndDate must be greater than StartDate.");
+        }
+
+        // Check if OrderDetailId is valid and exists in the database
+        var orderDetail = await _context.OrderDetails.FindAsync(assemblyLineDto.OrderDetailId);
+        if (orderDetail == null)
+        {
+            return BadRequest("OrderDetailId is invalid or does not exist.");
+        }
+
+        // Ánh xạ DTO sang Entity
         var assemblyLine = new AssemblyLine
         {
             StartDate = assemblyLineDto.StartDate,
@@ -149,7 +162,7 @@ public class AssemblyLinesController : ControllerBase
         _context.AssemblyLines.Add(assemblyLine);
         await _context.SaveChangesAsync();
 
-        // Map the entity back to the DTO
+        // Ánh xạ Entity sang DTO
         var createdAssemblyLineDto = new AssemblyLineDTO
         {
             Id = assemblyLine.Id,
@@ -162,6 +175,7 @@ public class AssemblyLinesController : ControllerBase
 
         return CreatedAtAction("GetAssemblyLine", new { id = assemblyLine.Id }, createdAssemblyLineDto);
     }
+
 
 
     [Authorize(Policy = "RequireAdminOrTruongChuyenRole")]
